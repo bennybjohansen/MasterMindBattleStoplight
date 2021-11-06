@@ -1,0 +1,732 @@
+openapi: 3.1.0
+info:
+  title: MastermindBattle
+  version: '1.0'
+  summary: Exposes the powerful "MasterMind Battle Gaming Engine"
+  description: 'This api offers any organisation the ability to create the UI for a master mind game. You provide the UI, we provide the game engine.'
+  contact:
+    name: Benny Bomstærk
+servers:
+  - url: 'https://virtserver.swaggerhub.com/BennyBomstaerk3/MasterMindBattle/1.0.0'
+tags:
+  - name: users
+    description: Users are players of the game
+  - name: games
+    description: Games are are a game against the computer or against an opponent
+  - name: sitestatistics
+    description: Information about the game for "overview/propmotion"
+  - name: gamesummaries
+    description: Overview of the games played
+  - name: events
+    description: Events that have taken place during a game
+paths:
+  /users:
+    get:
+      summary: Returns a list of users
+      tags:
+        - users
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  __nextLink:
+                    type: string
+                  Data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        UserId:
+                          type: string
+                          description: Unique Id of user
+                        Name:
+                          type: string
+                          description: Name of user
+                        Picture:
+                          type: string
+                          description: Url of Picture - if available
+                        GamesPlayed:
+                          type: integer
+                          description: Number of games played
+                        GamesWon:
+                          type: integer
+                          description: Number of games won
+                        GamesWonOnTime:
+                          type: integer
+                          description: |
+                            Games won on time
+                        CurrentStatus:
+                          type: object
+                          properties:
+                            Status:
+                              $ref: '#/components/schemas/UserStatus'
+                            GameOrChallengeId:
+                              type: string
+                              description: Id of game or challenge this user is currently participating in. "null" of not participating.
+              examples:
+                example-1:
+                  value:
+                    __nextLink: string
+                    Data:
+                      - UserId: string
+                        Name: string
+                        Picture: string
+                        GamesPlayed: 0
+                        GamesWon: 0
+                        GamesWonOnTime: 0
+                        CurrentStatus:
+                          Status: OffLine
+                          GameOrChallengeId: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+      operationId: get-users
+      description: |2-
+
+
+
+         Returns list of users:  
+                  - If the caller is a regular user, the list only includes users, who are online.            
+                  - If the caller is an **admin**, the list may include all users registered on the site.  
+                  Paging is supported.
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: ReturnAll
+          description: 'If false returns users who are online. If true returns all users. **Note if caller is not administrator, only online users will be returned**'
+        - schema:
+            type: integer
+          in: query
+          name: $top
+          description: Max number to return
+        - schema:
+            type: integer
+          in: query
+          name: $skip
+          description: Start from record
+  /sitestatistics:
+    get:
+      summary: Returns site statistics to be shown on front page.
+      tags:
+        - sitestatistics
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  NoOfGamesPlayes:
+                    type: integer
+                    description: |
+                      Number of games played across entire site
+                  NoOfRegisteredUsers:
+                    type: integer
+                    description: Number of registered users on site
+                  NoOfOnlineUsers:
+                    type: integer
+                    description: Number of users online now
+                  TopPlayers:
+                    type: array
+                    description: A list of top players
+                    items:
+                      type: object
+                      properties:
+                        UserId:
+                          type: string
+                          description: Unique Id of player
+                        Name:
+                          type: string
+                          description: Name of player
+              examples:
+                example-1:
+                  value:
+                    NoOfGamesPlayes: 0
+                    NoOfRegisteredUsers: 0
+                    NoOfUsersOnline: 0
+                example-2:
+                  value:
+                    NoOfGamesPlayes: 1000
+                    NoOfRegisteredUsers: 30
+                    NoOfOnlineUsers: 30
+                    TopPlayers:
+                      - UserId: UserId3
+                        Name: Benny Bomstaerk
+                      - UserId: UserId4
+                        Name: Peter Pan
+      operationId: get-sitestatistics
+      description: This operation shows the information displayed to vistors of the front page.
+  /games:
+    post:
+      tags:
+        - games
+      summary: Create a new game
+      operationId: post-games
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  GameId:
+                    type: string
+                    description: The Id of the game
+                  GameStatus:
+                    $ref: '#/components/schemas/GameStatus'
+                  RowNo:
+                    type: integer
+                    description: 'The current active row, will always be 0'
+              examples:
+                Simple:
+                  value:
+                    GameId: GameId1
+                    GameStatus: InProgress
+                    RowNo: 0
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              examples: {}
+      description: Create new game of specified type.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: The of game to be created
+              properties:
+                GameType:
+                  $ref: '#/components/schemas/GameType'
+              required:
+                - GameType
+        description: ''
+    parameters: []
+  '/games/{GameId}':
+    get:
+      summary: Your GET endpoint
+      tags:
+        - games
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  GameId:
+                    type: string
+                    description: The Id of the game
+                  GameStatus:
+                    $ref: '#/components/schemas/GameStatus'
+                  GameType:
+                    $ref: '#/components/schemas/GameType'
+                  StartTime:
+                    type: string
+                    format: date-time
+                    default: '2021-10-01T00:00:00Z'
+              examples:
+                example-1:
+                  value:
+                    GameId: GameId1
+                    GameStatus: InProgress
+                    GameType: Normal
+                    StartTime: '2021-10-01T00:00:00Z'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: Not Found
+      operationId: get-games
+      description: GameId
+    parameters:
+      - schema:
+          type: string
+        name: GameId
+        in: path
+        required: true
+        description: The Id of the game for which details are required
+  '/games/{GameId}/moves':
+    parameters:
+      - schema:
+          type: string
+        name: GameId
+        in: path
+        description: The id of the game on which this move is registered
+        required: true
+    post:
+      tags:
+        - games
+      summary: Register a new move on the specified game
+      operationId: post-games-GameId-moves
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  GameId:
+                    type: string
+                    description: The Id of the game.
+                  GameStatus:
+                    $ref: '#/components/schemas/GameStatus'
+                  RowNo:
+                    type: integer
+                    description: The current active row between 0 and 9
+                  Guess:
+                    type: array
+                    items:
+                      type: integer
+                  Score:
+                    type: object
+                    properties:
+                      NoOfCorrectColors:
+                        type: integer
+                        description: Number of colors not placed at the right location
+                      NoOfCorrectLocations:
+                        type: integer
+                        description: Number of colors placed at the right location
+                  Answer:
+                    type: array
+                    description: 'The answer. Will only be returned if answer is guessed, or GameStatus is no longer InProgress.'
+                    items:
+                      type: integer
+              examples:
+                example-1:
+                  value:
+                    GameId: GameId1
+                    GameStatus: InProgress
+                    RowNo: 4
+                    Guess:
+                      - 1
+                      - 2
+                      - 4
+                      - 5
+                    Score:
+                      NoOfCorrectColors: 1
+                      NoOfCorrectLocations: 3
+                    Answer:
+                      - 1
+                      - 3
+                      - 5
+                      - 4
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+      description: Call this to indicate that a player has made a new move.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Move:
+                  $ref: '#/components/schemas/MoveType'
+                Guess:
+                  type: array
+                  description: 'Indicates the users choice of colors for each column, if move=guess'
+                  items:
+                    type: integer
+            examples:
+              example-1:
+                value:
+                  Move: Guess
+                  Guess:
+                    - 1
+                    - 2
+                    - 4
+                    - 2
+      x-badrequest-values: GameNotInProgress
+  /gamesummaries:
+    get:
+      summary: Get a list of game summaries
+      tags:
+        - gamesummaries
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        UserId:
+                          type: string
+                        Name:
+                          type: string
+                        GameId:
+                          type: string
+                        GameStatus:
+                          $ref: '#/components/schemas/GameStatus'
+                        RowNo:
+                          type: integer
+                          description: The current active or most recently active row
+                        Guess:
+                          type: array
+                          items:
+                            type: integer
+                        Score:
+                          type: object
+                          properties:
+                            NoOfCorrectColors:
+                              type: integer
+                            NoOfCorrectLocations:
+                              type: integer
+              examples:
+                example-1:
+                  value:
+                    Data:
+                      - UserId: User113
+                        Name: BennyBomstaerk
+                        GameId: Game98
+                        GameStatus: InProgress
+                        RowNo: 4
+                        Guess:
+                          - 1
+                          - 3
+                          - 4
+                          - 2
+                        Score:
+                          NoOfCorrectColors: 2
+                          NoOfCorrectLocations: 1
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: ''
+      operationId: get-gamesummaries
+      description: |-
+        Get list of summaries for games, based on user, status dates.  
+                User can only be specified by administrator, else assumes currently logged in user.  
+                - If user is not specified returns game summaries for all users  
+                - If user IS specified returns game for specified user.  
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: UserId
+          description: The id of the user
+        - schema:
+            type: string
+            format: date
+          in: query
+          name: FromDate
+          description: 'If specified, game must be in progress or have ended after fromDate'
+        - schema:
+            type: boolean
+            default: false
+          in: query
+          name: InProgress
+          description: Set to true to specifid that only games which are currently in progress should be returned
+        - schema:
+            type: integer
+          in: query
+          name: $top
+          description: Max number to return
+        - schema:
+            type: integer
+          in: query
+          name: $skip
+          description: Start from record no
+  /events:
+    get:
+      summary: Returns a list game events
+      tags:
+        - events
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  __nextLink:
+                    type: string
+                    description: Optional link to next set of events
+                  Data:
+                    type: array
+                    items:
+                      discriminator:
+                        propertyName: EventType
+                      anyOf:
+                        - $ref: '#/components/schemas/GameEventType'
+                        - $ref: '#/components/schemas/MoveEventType'
+              examples:
+                example-1:
+                  value:
+                    __nextLink: string
+                    Data:
+                      - EventId: '234214'
+                        TimeStamp: '2019-08-24T14:15:22Z'
+                        EventType: GameStarted
+                        UserId: UserId31
+                        GameId: GameId1
+                        Message: User UserId34 has started GameId 1
+                example-2:
+                  value:
+                    __nextLink: string
+                    Data:
+                      - EventId: '322523'
+                        TimeStamp: '2019-08-24T14:15:22Z'
+                        EventType: UserAdded
+                        UserId: UserId34
+                        Message: User UserId34 has been added
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+      operationId: get-events
+      description: |-
+        Returns a list of game events - can only be called by administrator.
+        Paging is supported.
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: $top
+          description: Max number to return
+        - schema:
+            type: integer
+          in: query
+          name: $skip
+          description: Start from record
+  /events /subscriptions:
+    parameters: []
+    post:
+      tags:
+        - games
+      summary: Create subscription for game events
+      operationId: post-events-subscriptions
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ContextId:
+                    type: string
+                    description: The streaming context that the response is associated with
+                  ReferenceId:
+                    type: string
+                    description: The reference id that (along with streaming context id) identifies the subscription)
+                  Snapshot:
+                    type: array
+                    description: 'Snapshot of the current data at hand, when subscription was created'
+                    items:
+                      anyOf:
+                        - $ref: '#/components/schemas/GameEventType'
+                        - $ref: '#/components/schemas/MoveEventType'
+      description: Create a subscription to receive game events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ContextId:
+                  type: string
+                ReferemceId:
+                  type: string
+                Arguments:
+                  type: object
+                  properties:
+                    UserId:
+                      type: string
+                      description: 'If specified, only provide enverts for specified user'
+                    GameId:
+                      type: string
+                      description: If specified only provide events for specified game
+              required:
+                - ContextId
+                - ReferemceId
+        description: The data needed to setup a subscription
+      'x-application-visibility: saxo-only': null
+      'x-required-operation:op-read-events': null
+components:
+  schemas:
+    UserStatus:
+      title: UserStatus
+      type: string
+      description: Possible states a user can be in
+      enum:
+        - OffLine
+        - OnLine
+        - InChallenge
+        - InGame
+      x-enum-descriptions:
+        OffLine: The user is off line
+        OnLine: The user is online
+        InChallenge: The user is playing a challenge
+        InGame: The user is in a regular game against the computer
+    GameType:
+      type: string
+      title: GameType
+      enum:
+        - Normal
+        - Speed
+      x-enum-descriptions:
+        Normal: A normal game
+        Speed: A speed game
+      description: Type of the game
+    GameStatus:
+      type: string
+      description: Status of game
+      enum:
+        - InProgress
+        - UserResigned
+        - UserLost
+        - UserWon
+      x-enum-descriptions:
+        InProgress: Game is in progress
+        UserResigned: User resigned
+        UserLost: User lost
+        UserWon: User won
+    MoveType:
+      type: string
+      description: Move made by user
+      enum:
+        - Guess
+        - GiveUp
+      x-enum-descriptions:
+        Guess: This is a regular guess
+        GiveUp: The user gives up
+    EventType:
+      type: string
+      description: Type of game event
+      enum:
+        - UserAdded
+        - GameStarted
+        - GameCompleted
+        - MoveSubmitted
+      x-enum-descriptions:
+        UserAdded: A user is added to the game
+        GameStarted: A game has started
+        GameCompleted: A game has ended
+        MoveSubmitted: A user has submitted a move
+    BadRequest:
+      description: One or more of the provided parameters are invalid.
+      content:
+        application/json:
+          schema:
+            required:
+              - Message
+              - ErrorCode
+            type: object
+            properties:
+              Message:
+                type: string
+              ErrorCode:
+                enum:
+                  - InvalidRequest
+                type: string
+                x-enum-descriptions:
+                  InvalidRequest: Default error code returned when it cannot be determined which part of the request is malformed.
+              ModelState:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+      examples:
+        - {}
+      type: object
+      properties:
+        Message:
+          type: string
+        ErrorCode:
+          type: string
+          enum:
+            - InvalidRequest
+            - InvalidModelState
+        ModelState:
+          type: object
+          properties:
+            Param1:
+              type:
+                - string
+                - array
+              items:
+                type: string
+    GameEventType:
+      title: GameEventType
+      type: object
+      properties:
+        EventId:
+          type: string
+          description: Id of the Event
+        TimeStamp:
+          type: string
+          format: date-time
+          description: Timestamp of when the event happened
+        EventType:
+          $ref: '#/components/schemas/EventType'
+        UserId:
+          type: string
+          description: Id of the user involved in the event
+        GameId:
+          type: string
+          description: Game involved in the event
+        Message:
+          type: string
+          description: Textual description of the event
+    MoveEventType:
+      title: MoveEventType
+      type: object
+      properties:
+        EventId:
+          type: string
+        TimeStamp:
+          type: string
+          format: date-time
+        EventType:
+          $ref: '#/components/schemas/EventType'
+        UserId:
+          type: string
+        GameId:
+          type: string
+        Message:
+          type: string
+        Guess:
+          type: object
+          properties:
+            Move:
+              $ref: '#/components/schemas/MoveType'
+            Guess:
+              type: array
+              description: 'Indicates the users choice of colors for each column, if move-guess'
+              items:
+                type: integer
+  securitySchemes: {}
+x-some-global-extension: null
