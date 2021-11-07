@@ -17,6 +17,7 @@ The purpose of the API is to allow someone to write a client application, which 
 * As an admin I would like to see the status of all users and all games
 * As an admin I would like to get notified of important events, such as user moves or new users joining the site.
 
+
 ## Some Data Models
 
 ```json
@@ -38,3 +39,4 @@ Game:
   ]    
 }
 ```
+
